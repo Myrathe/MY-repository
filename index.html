@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Renk Avcısı</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #151d38;
+      --accent: #45f3ff;
+      --text: #eef4ff;
+      --good: #53ff8a;
+      --warn: #ffd95a;
+      --danger: #ff5a7a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(circle at 15% 15%, #1e2d58, var(--bg));
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: min(940px, 100%);
+      display: grid;
+      gap: 16px;
+    }
+
+    .panel {
+      background: linear-gradient(145deg, #182248, var(--panel));
+      border: 1px solid rgba(69, 243, 255, 0.2);
+      border-radius: 18px;
+      box-shadow: 0 12px 38px rgba(0, 0, 0, 0.34);
+      padding: 16px;
+    }
+
+    .top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .title {
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 11px;
+      border-radius: 11px;
+      font-size: 0.95rem;
+      min-width: 104px;
+      text-align: center;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-weight: 650;
+      background: var(--accent);
+      color: #07112c;
+      transition: 0.18s transform ease, 0.18s opacity ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+    button.alt {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #message {
+      margin-top: 10px;
+      min-height: 22px;
+      font-weight: 650;
+      color: var(--warn);
+    }
+
+    .arena-wrap {
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: linear-gradient(160deg, #0d1738, #0a1230);
+      min-height: 420px;
+    }
+
+    #arena {
+      width: 100%;
+      aspect-ratio: 16/9;
+      max-height: 65vh;
+      position: relative;
+    }
+
+    .target {
+      position: absolute;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6);
+      animation: pulse 0.8s ease infinite;
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .target.bonus {
+      border: 3px dashed rgba(255, 255, 255, 0.55);
+      animation-duration: 0.5s;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.94); box-shadow: 0 0 0 0 rgba(255,255,255,0.45); }
+      70% { transform: scale(1); box-shadow: 0 0 0 14px rgba(255,255,255,0); }
+      100% { transform: scale(0.94); box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+    }
+
+    .footer {
+      font-size: 0.92rem;
+      opacity: 0.88;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    kbd {
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      padding: 0 6px;
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="panel">
+      <div class="top">
+        <div class="title">🎯 Renk Avcısı — Basit ama Sürükleyici Mini Oyun</div>
+        <div class="stats">
+          <div class="badge">Skor: <strong id="score">0</strong></div>
+          <div class="badge">Süre: <strong id="time">45</strong>s</div>
+          <div class="badge">Seviye: <strong id="level">1</strong></div>
+          <div class="badge">En İyi: <strong id="best">0</strong></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="startBtn">Oyunu Başlat</button>
+        <button id="restartBtn" class="alt">Yeniden Başlat</button>
+        <button id="downloadBtn" class="alt">Oyunu İndir (.html)</button>
+      </div>
+      <div id="message">Hedefleri tıkla, serileri kaçırma, bonusları yakala!</div>
+    </section>
+
+    <section class="panel arena-wrap">
+      <div id="arena" aria-label="oyun alanı"></div>
+    </section>
+
+    <section class="panel footer">
+      <span>💡 Her 10 puanda seviye atlar, hedefler hızlanır.</span>
+      <span>⚡ Bonus toplar 3 puan verir ve +2 saniye kazandırır.</span>
+      <span>Klavye: <kbd>Space</kbd> başlat / yeniden başlat.</span>
+    </section>
+  </main>
+
+  <script>
+    const arena = document.getElementById('arena');
+    const scoreEl = document.getElementById('score');
+    const timeEl = document.getElementById('time');
+    const levelEl = document.getElementById('level');
+    const bestEl = document.getElementById('best');
+    const messageEl = document.getElementById('message');
+
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    let state = {
+      running: false,
+      score: 0,
+      timeLeft: 45,
+      level: 1,
+      timerId: null,
+      spawnId: null,
+      best: Number(localStorage.getItem('renk-avcisi-best') || 0)
+    };
+
+    bestEl.textContent = state.best;
+
+    const random = (min, max) => Math.random() * (max - min) + min;
+
+    function updateUI() {
+      scoreEl.textContent = state.score;
+      timeEl.textContent = state.timeLeft;
+      levelEl.textContent = state.level;
+      bestEl.textContent = state.best;
+    }
+
+    function setMessage(text, tone = 'warn') {
+      const map = { warn: 'var(--warn)', good: 'var(--good)', danger: 'var(--danger)' };
+      messageEl.style.color = map[tone] || 'var(--warn)';
+      messageEl.textContent = text;
+    }
+
+    function clearTargets() {
+      arena.querySelectorAll('.target').forEach((el) => el.remove());
+    }
+
+    function spawnTarget() {
+      if (!state.running) return;
+
+      const target = document.createElement('button');
+      const isBonus = Math.random() < 0.18;
+      const size = isBonus ? random(38, 52) : random(44, 72);
+
+      target.className = `target${isBonus ? ' bonus' : ''}`;
+      target.setAttribute('aria-label', isBonus ? 'bonus hedef' : 'hedef');
+      target.style.width = `${size}px`;
+      target.style.height = `${size}px`;
+      target.style.background = isBonus
+        ? `conic-gradient(from 180deg, #fff599, #ff90cf, #9ad6ff, #fff599)`
+        : `hsl(${Math.floor(random(0, 360))} 82% 62%)`;
+
+      const rect = arena.getBoundingClientRect();
+      const x = random(0, Math.max(0, rect.width - size));
+      const y = random(0, Math.max(0, rect.height - size));
+      target.style.left = `${x}px`;
+      target.style.top = `${y}px`;
+
+      const life = isBonus ? random(700, 1050) : random(900, 1500) - state.level * 40;
+      const timeout = setTimeout(() => {
+        target.remove();
+      }, Math.max(450, life));
+
+      target.addEventListener('click', () => {
+        if (!state.running) return;
+        clearTimeout(timeout);
+        target.remove();
+
+        const gain = isBonus ? 3 : 1;
+        state.score += gain;
+
+        if (isBonus) {
+          state.timeLeft += 2;
+          setMessage('⚡ Bonus! +3 puan ve +2 saniye kazandın.', 'good');
+        }
+
+        const newLevel = Math.floor(state.score / 10) + 1;
+        if (newLevel > state.level) {
+          state.level = newLevel;
+          setMessage(`🚀 Seviye ${state.level}! Oyun hızlandı.`, 'good');
+        }
+
+        if (state.score > state.best) {
+          state.best = state.score;
+          localStorage.setItem('renk-avcisi-best', String(state.best));
+        }
+
+        updateUI();
+      });
+
+      arena.appendChild(target);
+    }
+
+    function scheduleSpawns() {
+      clearInterval(state.spawnId);
+      state.spawnId = setInterval(() => {
+        spawnTarget();
+        if (state.level > 2 && Math.random() < 0.24) spawnTarget();
+      }, Math.max(320, 850 - state.level * 45));
+    }
+
+    function endGame() {
+      state.running = false;
+      clearInterval(state.timerId);
+      clearInterval(state.spawnId);
+      clearTargets();
+      setMessage(`Oyun bitti! Skorun: ${state.score}. En iyi skor: ${state.best}.`, 'danger');
+      startBtn.disabled = false;
+    }
+
+    function startGame() {
+      if (state.running) return;
+      state.running = true;
+      state.score = 0;
+      state.timeLeft = 45;
+      state.level = 1;
+      startBtn.disabled = true;
+      clearTargets();
+      updateUI();
+      setMessage('Başarılar! Hedefleri hızlıca yakala.', 'good');
+
+      scheduleSpawns();
+
+      state.timerId = setInterval(() => {
+        state.timeLeft -= 1;
+        if (state.timeLeft <= 0) {
+          state.timeLeft = 0;
+          updateUI();
+          endGame();
+          return;
+        }
+        updateUI();
+      }, 1000);
+    }
+
+    function restartGame() {
+      endGame();
+      startGame();
+    }
+
+    async function downloadGame() {
+      try {
+        const html = document.documentElement.outerHTML;
+        const blob = new Blob([`<!doctype html>\n${html}`], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'renk-avcisi.html';
+        a.click();
+        URL.revokeObjectURL(url);
+        setMessage('📦 Oyun dosyası indirildi! Dosyayı açarak çevrimdışı oynayabilirsin.', 'good');
+      } catch {
+        setMessage('İndirme sırasında bir sorun oluştu.', 'danger');
+      }
+    }
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', restartGame);
+    downloadBtn.addEventListener('click', downloadGame);
+
+    window.addEventListener('keydown', (event) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        state.running ? restartGame() : startGame();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (state.running) {
+        clearTargets();
+      }
+    });
+
+    updateUI();
+  </script>
+</body>
+</html>
